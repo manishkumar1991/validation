@@ -1,0 +1,14 @@
+name: Workflow1
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  create_comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create Comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments -f body="[WorkflowCommentTag]"
