@@ -1,0 +1,43 @@
+name: Workflow2
+on:
+  pull_request:
+    branches:
+      - main
+jobs:
+  append_comment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0    
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+      - name: Install dependencies
+        run: |
+              python -m pip install --upgrade pip
+              pip install requests
+              pip install PyYAML
+              pip install tabulate    
+      - name: Find and Append to Latest Comment
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Fetch the latest comment
+          LATEST_COMMENT=$(gh api repos/${{ github.repository }}/issues/${{ github.event.pull_request.number }}/comments --paginate | jq -c '.[-1]')
+          
+          # Extract comment ID and body
+          COMMENT_ID=$(echo "$LATEST_COMMENT" | jq -r .id)
+          COMMENT_BODY=$(echo "$LATEST_COMMENT" | jq -r .body)
+
+          # Check if the latest comment contains the tag
+          if [[ "$COMMENT_BODY" == *"[WorkflowCommentTag]"* ]]; then
+            # Append new content to the comment
+            UPDATED_BODY="${COMMENT_BODY}
+            Second Comment"
+            gh api repos/${{ github.repository }}/issues/comments/$COMMENT_ID -X PATCH -f body="$UPDATED_BODY"
+          else
+            echo "The latest comment does not contain the tag '[WorkflowCommentTag]'. Exiting."
+          fi
