@@ -1,0 +1,287 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "0190326b-1fe3-4072-b4ab-b5e24c81399a",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": true,
+              "showDefault": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": null
+          },
+          {
+            "id": "5fd8e8dd-6eef-480f-b0e4-aae142bb3f51",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "type": 5,
+            "isRequired": true,
+            "typeSettings": {
+              "additionalResourceOptions": []
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+          },
+          {
+            "id": "70ca879b-56d8-4325-995c-9923f0d46cde",
+            "version": "KqlParameterItem/1.0",
+            "name": "TimeRange",
+            "type": 4,
+            "isRequired": true,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": {
+              "durationMs": 2592000000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 0"
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TempData=datatable(\r\n    UserName: string,\r\n    TrainingStatus: string,\r\n    AccessLevel: string\r\n) [\r\n    \"Manish Kumar\", \"Completed\", \"Admin\",\r\n    \"Kannu\", \"Not Completed\", \"User\",\r\n    \"Shinda\", \"Completed\", \"Security Admin\",\r\n    \"Arora\", \"Not Completed\", \"Guest\"\r\n];\r\nTempData",
+        "size": 1,
+        "title": "Hipaa DB Users status",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ]
+      },
+      "customWidth": "30",
+      "name": "query - 1",
+      "styleSettings": {
+        "maxWidth": "30",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let TempData=datatable(\r\n    DevicName: string,\r\n    DeviceType: string,\r\n    Status: string\r\n) [\r\n    \"LinuxVM\", \"Server\",\"Online\",\r\n    \"WindowsVM\", \"Server\",\"Online\",\r\n    \"HippaFirewall\", \"NetworkDevice\",\"Online\"\r\n];\r\nTempData",
+        "size": 1,
+        "title": "Hipaa Assets",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ]
+      },
+      "customWidth": "30",
+      "name": "query - 2",
+      "styleSettings": {
+        "maxWidth": "30",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\r\n|where DeviceName != \"\"\r\n| summarize arg_max(TimeGenerated, OSPlatform, DeviceName, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded) by DeviceName\r\n| extend OnboardingStatus = case(\r\n        OnboardingStatus == \"Can be onboarded\" or OnboardingStatus == \"Insufficient info\", \"Not Onboarded\",\r\n        OnboardingStatus // otherwise keep original value\r\n    )\r\n| project TimeGenerated, DeviceName,OSPlatform,  OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded",
+        "size": 2,
+        "title": "Defender for Endpoint (Antivirus) Status ",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "DeviceName",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "60ch"
+              }
+            },
+            {
+              "columnMatch": "OSPlatform",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "60ch"
+              }
+            },
+            {
+              "columnMatch": "OnboardingStatus",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "50ch"
+              }
+            },
+            {
+              "columnMatch": "SensorHealthState",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "50ch"
+              }
+            },
+            {
+              "columnMatch": "ExposureLevel",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "50ch"
+              }
+            },
+            {
+              "columnMatch": "IsExcluded",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "50ch"
+              }
+            }
+          ]
+        }
+      },
+      "name": "query - 3",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\r\n| where Category == \"SQLSecurityAuditEvents\"\r\n| extend CRUDOperation = case(\r\n        statement_s startswith \"SELECT\", \"READ\",\r\n        statement_s startswith \"INSERT\", \"CREATE\",\r\n        statement_s startswith \"UPDATE\", \"UPDATE\",\r\n        statement_s startswith \"DELETE\", \"DELETE\",\r\n        statement_s startswith \"DROP\", \"DELETE\",            // <-- NEW: drop table/database = delete\r\n        statement_s startswith \"TRUNCATE\", \"DELETE\",        // <-- NEW: truncate table = delete\r\n        statement_s startswith \"ALTER\", \"MODIFY\",\r\n        statement_s startswith \"CREATE\", \"CreateTable\",\r\n        statement_s startswith \"\", \"Null\",           // <-- NEW: schema/role change\r\n        \"OTHER\"\r\n    )\r\n| project TimeGenerated, LogicalServerName_s, session_server_principal_name_s, client_ip_s, CRUDOperation, statement_s",
+        "size": 0,
+        "title": "Dangerous Crud operations performed by DB users",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ]
+      },
+      "name": "query - 4",
+      "styleSettings": {
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let myAlert = SecurityAlert  \r\n| mv-expand Entity = todynamic(Entities)\r\n| extend EntityType = tostring(Entity.Type)\r\n| extend DeviceName = iff(EntityType == \"host\", tostring(Entity.HostName), \"\")\r\n|where DeviceName != \"\"\r\n| summarize DeviceName = make_set(DeviceName, 1), any(AlertName), any(AlertSeverity), any(TimeGenerated) by AlertId = SystemAlertId;\r\nmyAlert\r\n| join kind=inner (\r\n    SecurityIncident\r\n    | mv-expand AlertIds\r\n    | extend AlertId = tostring(AlertIds)\r\n    | project IncidentName, IncidentNumber, Title, Severity, Status, IncidentCreatedTime = TimeGenerated, AlertId\r\n) on AlertId\r\n|summarize make_set(DeviceName) by IncidentNumber,Title,Severity,Status\r\n| project IncidentNumber, Title, Severity, Status, DeviceName=set_DeviceName\r\n",
+        "size": 0,
+        "title": "Incidents on Hipaa Servers (Last 24 hours)",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "table",
+        "tileSettings": {
+          "showBorder": false,
+          "titleContent": {
+            "columnMatch": "DeviceName",
+            "formatter": 1
+          },
+          "leftContent": {
+            "columnMatch": "IncidentNumber",
+            "formatter": 12,
+            "formatOptions": {
+              "palette": "auto"
+            },
+            "numberFormat": {
+              "unit": 17,
+              "options": {
+                "maximumSignificantDigits": 3,
+                "maximumFractionDigits": 2
+              }
+            }
+          }
+        },
+        "mapSettings": {
+          "locInfo": "LatLong",
+          "sizeSettings": "IncidentNumber",
+          "sizeAggregation": "Sum",
+          "legendMetric": "IncidentNumber",
+          "legendAggregation": "Sum",
+          "itemColorSettings": {
+            "type": "heatmap",
+            "colorAggregation": "Sum",
+            "nodeColorField": "IncidentNumber",
+            "heatmapPalette": "greenRed"
+          }
+        }
+      },
+      "name": "query - 5",
+      "styleSettings": {
+        "showBorder": true
+      }
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
