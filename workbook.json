@@ -34,7 +34,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+            "value": "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
           },
           {
             "id": "70ca879b-56d8-4325-995c-9923f0d46cde",
@@ -100,7 +100,7 @@
       "type": 3,
       "content": {
         "version": "KqlItem/1.0",
-        "query": "let TempData=datatable(\r\n    UserName: string,\r\n    TrainingStatus: string,\r\n    AccessLevel: string\r\n) [\r\n    \"Manish Kumar\", \"Completed\", \"Admin\",\r\n    \"Kannu\", \"Not Completed\", \"User\",\r\n    \"Shinda\", \"Completed\", \"Security Admin\",\r\n    \"Arora\", \"Not Completed\", \"Guest\"\r\n];\r\nTempData",
+        "query": "let TempData=datatable(\r\n    UserName: string,\r\n    TrainingStatus: string,\r\n    AccessLevel: string\r\n) [\r\n    \"Manish Kumar\", \"Completed\", \"Admin\",\r\n    \"Kannu\", \"Not Completed\", \"User\",\r\n    \"Shinda\", \"Completed\", \"Security Admin\",\r\n    \"Arora\", \"Not Completed\", \"Guest\"\r\n];\r\nTempData\r\n| extend TrainingStatus = case(\r\n    TrainingStatus == \"Completed\", strcat(\"🟩 \", TrainingStatus),\r\n    strcat(\"🟥 \", TrainingStatus)\r\n)",
         "size": 1,
         "title": "Hipaa DB Users status",
         "timeContextFromParameter": "TimeRange",
@@ -108,12 +108,32 @@
         "resourceType": "microsoft.operationalinsights/workspaces",
         "crossComponentResources": [
           "{Workspace}"
-        ]
+        ],
+        "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TrainingStatus",
+              "formatter": 1,
+              "formatOptions": {
+                "compositeBarSettings": {
+                  "labelText": "",
+                  "columnSettings": [
+                    {
+                      "columnName": "TrainingStatus",
+                      "color": "redBright"
+                    }
+                  ]
+                }
+              }
+            }
+          ]
+        }
       },
-      "customWidth": "30",
+      "customWidth": "25",
       "name": "query - 1",
       "styleSettings": {
-        "maxWidth": "30",
+        "maxWidth": "25",
         "showBorder": true
       }
     },
@@ -131,10 +151,10 @@
           "{Workspace}"
         ]
       },
-      "customWidth": "30",
+      "customWidth": "25",
       "name": "query - 2",
       "styleSettings": {
-        "maxWidth": "30",
+        "maxWidth": "25",
         "showBorder": true
       }
     },
@@ -142,7 +162,31 @@
       "type": 3,
       "content": {
         "version": "KqlItem/1.0",
-        "query": "DeviceInfo\r\n|where DeviceName != \"\"\r\n| summarize arg_max(TimeGenerated, OSPlatform, DeviceName, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded) by DeviceName\r\n| extend OnboardingStatus = case(\r\n        OnboardingStatus == \"Can be onboarded\" or OnboardingStatus == \"Insufficient info\", \"Not Onboarded\",\r\n        OnboardingStatus // otherwise keep original value\r\n    )\r\n| project TimeGenerated, DeviceName,OSPlatform,  OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded",
+        "query": "let myAlert = SecurityAlert  \r\n| mv-expand Entity = todynamic(Entities)\r\n| extend EntityType = tostring(Entity.Type)\r\n| extend DeviceName = iff(EntityType == \"host\", tostring(Entity.HostName), \"\")\r\n|where DeviceName != \"\"\r\n| summarize DeviceName = make_set(DeviceName, 1), any(AlertName), any(AlertSeverity), any(TimeGenerated) by AlertId = SystemAlertId;\r\nmyAlert\r\n| join kind=inner (\r\n    SecurityIncident\r\n    | mv-expand AlertIds\r\n    | extend AlertId = tostring(AlertIds)\r\n    | project IncidentName, IncidentNumber, Title, Severity, Status, IncidentCreatedTime = TimeGenerated, AlertId\r\n) on AlertId\r\n|summarize make_set(DeviceName) by IncidentNumber,Title,Severity,Status\r\n|summarize count() by Severity",
+        "size": 1,
+        "title": "New/Active Incidents over last 24 hours",
+        "timeContext": {
+          "durationMs": 86400000
+        },
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "visualization": "piechart",
+        "tileSettings": {
+          "showBorder": false
+        }
+      },
+      "customWidth": "25",
+      "name": "query - 7",
+      "styleSettings": {
+        "maxWidth": "25",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "DeviceInfo\r\n|where DeviceName != \"\"\r\n| summarize arg_max(TimeGenerated, OSPlatform, DeviceName, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded) by DeviceName\r\n| extend OnboardingStatus = case(\r\n        OnboardingStatus == \"Can be onboarded\" or OnboardingStatus == \"Insufficient info\", \"Not Onboarded\",\r\n        OnboardingStatus // otherwise keep original value\r\n    )\r\n| project TimeGenerated, DeviceName,OSPlatform,  OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded\r\n|extend SensorHealthState = iff(SensorHealthState==\"Active\" and OnboardingStatus == \"Onboarded\",\"🟩 Active\", iff(SensorHealthState==\"Inactive\" and OnboardingStatus == \"Onboarded\",\"🟥 Inactive\",SensorHealthState))",
         "size": 2,
         "title": "Defender for Endpoint (Antivirus) Status ",
         "timeContextFromParameter": "TimeRange",
@@ -215,10 +259,30 @@
         "resourceType": "microsoft.operationalinsights/workspaces",
         "crossComponentResources": [
           "{Workspace}"
-        ]
+        ],
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "TimeGenerated",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "26ch"
+              }
+            },
+            {
+              "columnMatch": "session_server_principal_name_s",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "33ch"
+              }
+            }
+          ]
+        }
       },
+      "customWidth": "50",
       "name": "query - 4",
       "styleSettings": {
+        "maxWidth": "50",
         "showBorder": true
       }
     },
@@ -226,7 +290,95 @@
       "type": 3,
       "content": {
         "version": "KqlItem/1.0",
-        "query": "let myAlert = SecurityAlert  \r\n| mv-expand Entity = todynamic(Entities)\r\n| extend EntityType = tostring(Entity.Type)\r\n| extend DeviceName = iff(EntityType == \"host\", tostring(Entity.HostName), \"\")\r\n|where DeviceName != \"\"\r\n| summarize DeviceName = make_set(DeviceName, 1), any(AlertName), any(AlertSeverity), any(TimeGenerated) by AlertId = SystemAlertId;\r\nmyAlert\r\n| join kind=inner (\r\n    SecurityIncident\r\n    | mv-expand AlertIds\r\n    | extend AlertId = tostring(AlertIds)\r\n    | project IncidentName, IncidentNumber, Title, Severity, Status, IncidentCreatedTime = TimeGenerated, AlertId\r\n) on AlertId\r\n|summarize make_set(DeviceName) by IncidentNumber,Title,Severity,Status\r\n| project IncidentNumber, Title, Severity, Status, DeviceName=set_DeviceName\r\n",
+        "query": "AzureDiagnostics\r\n| where Category == \"SQLSecurityAuditEvents\"\r\n| extend CRUDOperation = case(\r\n        statement_s startswith \"SELECT\", \"READ\",\r\n        statement_s startswith \"INSERT\", \"CREATE\",\r\n        statement_s startswith \"UPDATE\", \"UPDATE\",\r\n        statement_s startswith \"DELETE\", \"DELETE\",\r\n        statement_s startswith \"DROP\", \"DELETE\",            // <-- NEW: drop table/database = delete\r\n        statement_s startswith \"TRUNCATE\", \"DELETE\",        // <-- NEW: truncate table = delete\r\n        statement_s startswith \"ALTER\", \"MODIFY\",\r\n        statement_s startswith \"CREATE\", \"CreateTable\",\r\n        statement_s startswith \"\", \"Null\",           // <-- NEW: schema/role change\r\n        \"OTHER\"\r\n    )\r\n| project TimeGenerated, LogicalServerName_s, session_server_principal_name_s, client_ip_s, CRUDOperation, statement_s\r\n| summarize OperationCount = count() by bin(TimeGenerated, 1d),CRUDOperation",
+        "size": 0,
+        "title": "Operations performed on DB server over 1 day interval",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ],
+        "visualization": "areachart"
+      },
+      "customWidth": "50",
+      "name": "query - 6",
+      "styleSettings": {
+        "maxWidth": "50",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SecurityAlert  \r\n| mv-expand Entity = todynamic(Entities)\r\n| extend EntityType = tostring(Entity.Type)\r\n| extend DeviceName = iff(EntityType == \"host\", tostring(Entity.HostName), \"\")\r\n|extend Incident = tostring(parse_json(ExtendedProperties).IncidentId)\r\n|where DeviceName != \"\" and CompromisedEntity != \"\"\r\n|summarize Incidents = make_set(Incident) by CompromisedEntity",
+        "size": 0,
+        "title": "Compromised Hipaa Assets",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "crossComponentResources": [
+          "{Workspace}"
+        ]
+      },
+      "customWidth": "50",
+      "name": "query - 8",
+      "styleSettings": {
+        "maxWidth": "50",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "SigninLogs\r\n| project UserPrincipalName,\r\n          AuthenticationRequirement,          // \"singleFactorAuthentication\" or \"multiFactorAuthentication\"\r\n          AuthenticationDetails,\r\n          ResultType,\r\n          ResultDescription,\r\n          ConditionalAccessStatus,\r\n          TimeGenerated\r\n| summarize SignIns = count(),\r\n            MFASuccess = countif(AuthenticationRequirement == \"multiFactorAuthentication\")\r\n        by UserPrincipalName\r\n| extend MFAStatus = iff(MFASuccess > 0, \"MFA Used\", \"No MFA Used\"), MFAFailure = SignIns - MFASuccess\r\n| sort by MFAStatus asc, SignIns desc",
+        "size": 0,
+        "title": "DB Users MFA status",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "UserPrincipalName",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "35ch"
+              }
+            },
+            {
+              "columnMatch": "MFAStatus",
+              "formatter": 2,
+              "formatOptions": {
+                "customColumnWidthSetting": "25ch"
+              }
+            },
+            {
+              "columnMatch": "MFAFailure",
+              "formatter": 8,
+              "formatOptions": {
+                "min": 0,
+                "max": 20,
+                "palette": "red"
+              }
+            }
+          ]
+        }
+      },
+      "customWidth": "50",
+      "name": "query - 9",
+      "styleSettings": {
+        "maxWidth": "50",
+        "showBorder": true
+      }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "let myAlert = SecurityAlert  \r\n| mv-expand Entity = todynamic(Entities)\r\n| extend EntityType = tostring(Entity.Type)\r\n| extend DeviceName = iff(EntityType == \"host\", tostring(Entity.HostName), \"\")\r\n|where DeviceName != \"\"\r\n| summarize DeviceName = make_set(DeviceName), AlertName=any(AlertName), AlertSeverity=any(AlertSeverity), any(TimeGenerated) ,ProductName= any(ProductName) , Tactics=any(Tactics) ,CompromisedEntity=any(CompromisedEntity) ,AlertLink=any(AlertLink)by AlertId = SystemAlertId;\r\nmyAlert\r\n| join kind=inner (\r\n    SecurityIncident\r\n    | mv-expand AlertIds\r\n    | extend AlertId = tostring(AlertIds)\r\n    | project IncidentName, IncidentNumber, Title, Severity, Status, IncidentCreatedTime = TimeGenerated, AlertId\r\n) on AlertId\r\n|summarize DeviceName = make_set(DeviceName) by IncidentNumber,Title,Severity,Status,Tactics,ProductName,AlertLink",
         "size": 0,
         "title": "Incidents on Hipaa Servers (Last 24 hours)",
         "timeContext": {
@@ -238,6 +390,53 @@
           "{Workspace}"
         ],
         "visualization": "table",
+        "gridSettings": {
+          "formatters": [
+            {
+              "columnMatch": "Title",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "90ch"
+              }
+            },
+            {
+              "columnMatch": "Severity",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "20ch"
+              }
+            },
+            {
+              "columnMatch": "Status",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "20ch"
+              }
+            },
+            {
+              "columnMatch": "Tactics",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "30ch"
+              }
+            },
+            {
+              "columnMatch": "AlertLink",
+              "formatter": 7,
+              "formatOptions": {
+                "linkTarget": "Url",
+                "customColumnWidthSetting": "80ch"
+              }
+            },
+            {
+              "columnMatch": "DeviceName",
+              "formatter": 0,
+              "formatOptions": {
+                "customColumnWidthSetting": "50ch"
+              }
+            }
+          ]
+        },
         "tileSettings": {
           "showBorder": false,
           "titleContent": {
@@ -277,10 +476,23 @@
       "styleSettings": {
         "showBorder": true
       }
+    },
+    {
+      "type": 3,
+      "content": {
+        "version": "KqlItem/1.0",
+        "query": "AzureDiagnostics\r\n| where Category == \"AzureFirewallNetworkRule\"\r\n| where TimeGenerated > ago(1h)\r\n| extend SourceIP = extract(@\"from\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+):\", 1, msg_s),\r\n         SourcePort = extract(@\"from\\s+\\d+\\.\\d+\\.\\d+\\.\\d+:(\\d+)\", 1, msg_s),\r\n         DestinationIP = extract(@\"to\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+):\", 1, msg_s),\r\n         DestinationPort = extract(@\"to\\s+\\d+\\.\\d+\\.\\d+\\.\\d+:(\\d+)\", 1, msg_s),\r\n         TranslatedIP = extract(@\"was DNAT'ed to\\s+(\\d+\\.\\d+\\.\\d+\\.\\d+):\", 1, msg_s),\r\n         TranslatedPort = extract(@\"was DNAT'ed to\\s+\\d+\\.\\d+\\.\\d+\\.\\d+:(\\d+)\", 1, msg_s),\r\n         Action = extract(@\"Action:\\s*(\\w+)\", 1, msg_s)\r\n| project TimeGenerated,Resource, SourceIP, SourcePort, DestinationIP, DestinationPort, TranslatedIP, TranslatedPort,Action\r\n|extend Action = iff(Action == \"Deny\" ,\"🟥 Deny\",\"🟩 Allow\")\r\n| sort by TimeGenerated desc",
+        "size": 0,
+        "title": "Network Ports utlization status",
+        "timeContextFromParameter": "TimeRange",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "query - 10"
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+    "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
