@@ -20,7 +20,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": null
+            "value": "/subscriptions/b98fc437-762f-42f0-98d3-80bd74bf7bb3"
           },
           {
             "id": "5fd8e8dd-6eef-480f-b0e4-aae142bb3f51",
@@ -34,7 +34,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": null
+            "value": "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
           },
           {
             "id": "70ca879b-56d8-4325-995c-9923f0d46cde",
@@ -86,7 +86,7 @@
               "durationMs": 86400000
             },
             "value": {
-              "durationMs": 86400000
+              "durationMs": 1800000
             }
           }
         ],
@@ -126,10 +126,145 @@
             "linkLabel": "Attack Range",
             "subTarget": "attackrange",
             "style": "link"
+          },
+          {
+            "id": "c5f19a15-b335-4916-91d2-b5a53c79025a",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Audit Trail Reporting",
+            "subTarget": "audittrailreporting",
+            "style": "link"
           }
         ]
       },
       "name": "links - 11"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "AzureDiagnostics\r\n|where isnotempty(msg_s)\r\n|summarize count() by Resource ,msg_s\r\n|project-away count_ ",
+              "size": 0,
+              "title": "Network Traffic logs of HIPAA assets",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "msg_s",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "170ch"
+                    }
+                  }
+                ]
+              }
+            },
+            "customWidth": "65",
+            "name": "query - 6",
+            "styleSettings": {
+              "maxWidth": "65",
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "union SecurityEvent,Syslog \r\n|where Process != \"\"\r\n|extend Process = coalesce(Process,ProcessName)\r\n|summarize count() by Process,Computer\r\n|project-away count_",
+              "size": 0,
+              "title": "Process running on HIPAA assets",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Process",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "46ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "Computer",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "41ch"
+                    }
+                  }
+                ]
+              }
+            },
+            "customWidth": "35",
+            "name": "query - 7",
+            "styleSettings": {
+              "maxWidth": "35",
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityEvent \r\n|where isnotempty(Account)\r\n| summarize count() by Account , AccountType ,Computer , Activity ,ParentProcessName",
+              "size": 0,
+              "title": "Security events of HIPAA assets",
+              "timeContextFromParameter": "TimeRange",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "Account",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "42ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "ParentProcessName",
+                    "formatter": 0,
+                    "formatOptions": {
+                      "customColumnWidthSetting": "100ch"
+                    }
+                  },
+                  {
+                    "columnMatch": "count_",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "redBright"
+                    }
+                  }
+                ]
+              }
+            },
+            "name": "query - 8",
+            "styleSettings": {
+              "showBorder": true
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "seltab",
+        "comparison": "isEqualTo",
+        "value": "audittrailreporting"
+      },
+      "name": "AuditGroup"
     },
     {
       "type": 12,
@@ -813,7 +948,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+    "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
