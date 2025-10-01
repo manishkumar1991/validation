@@ -20,7 +20,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201"
+            "value": "/subscriptions/7619e183-fb89-4e4b-a3b3-924fba956be7"
           },
           {
             "id": "5fd8e8dd-6eef-480f-b0e4-aae142bb3f51",
@@ -34,7 +34,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+            "value": "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
           },
           {
             "id": "70ca879b-56d8-4325-995c-9923f0d46cde",
@@ -86,7 +86,7 @@
               "durationMs": 86400000
             },
             "value": {
-              "durationMs": 3600000
+              "durationMs": 14400000
             }
           }
         ],
@@ -514,9 +514,9 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "let TempData=datatable(\r\n    DevicName: string,\r\n    DeviceType: string,\r\n    Status: string\r\n) [\r\n    \"LinuxVM\", \"Server\",\"Online\",\r\n    \"WindowsVM\", \"Server\",\"Online\",\r\n    \"HippaFirewall\", \"NetworkDevice\",\"Online\"\r\n];\r\nTempData",
+              "query": "union AzureDiagnostics , Heartbeat\r\n|extend Lastlog = TimeGenerated\r\n|where ResourceType contains \"machines\" or ResourceType contains \"AZUREFIREWALLS\"\r\n|summarize arg_max(Lastlog, *) by Resource\r\n|extend Current = now()\r\n|extend Offline_past_hour = datetime_diff('hour',now(),Lastlog)\r\n|project Resource,Lastlog,Current,Offline_past_hour\r\n|sort by Offline_past_hour desc",
               "size": 1,
-              "title": "Hipaa Assets",
+              "title": "Hipaa Assets status",
               "timeContextFromParameter": "TimeRange",
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
@@ -524,10 +524,10 @@
                 "{Workspace}"
               ]
             },
-            "customWidth": "25",
+            "customWidth": "45",
             "name": "query - 2",
             "styleSettings": {
-              "maxWidth": "25",
+              "maxWidth": "45",
               "showBorder": true
             }
           },
@@ -549,10 +549,10 @@
                 "showBorder": false
               }
             },
-            "customWidth": "25",
+            "customWidth": "15",
             "name": "query - 7",
             "styleSettings": {
-              "maxWidth": "25",
+              "maxWidth": "15",
               "showBorder": true
             }
           },
@@ -583,10 +583,10 @@
                 ]
               }
             },
-            "customWidth": "25",
+            "customWidth": "15",
             "name": "query - 10",
             "styleSettings": {
-              "maxWidth": "25",
+              "maxWidth": "15",
               "showBorder": true
             }
           },
@@ -594,7 +594,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "DeviceInfo\r\n|where DeviceName != \"\"\r\n| summarize arg_max(TimeGenerated, OSPlatform, DeviceName, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded) by DeviceName\r\n| extend OnboardingStatus = case(\r\n        OnboardingStatus == \"Can be onboarded\" or OnboardingStatus == \"Insufficient info\", \"Not Onboarded\",\r\n        OnboardingStatus // otherwise keep original value\r\n    )\r\n| project TimeGenerated, DeviceName,OSPlatform,  OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded\r\n|extend SensorHealthState = iff(SensorHealthState==\"Active\" and OnboardingStatus == \"Onboarded\",\"🟩 Active\", iff(SensorHealthState==\"Inactive\" and OnboardingStatus == \"Onboarded\",\"🟥 Inactive\",SensorHealthState))",
+              "query": "DeviceInfo\r\n| where DeviceName != \"\"\r\n| summarize arg_max(TimeGenerated, OSPlatform, DeviceName, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded) by DeviceName\r\n| extend OnboardingStatus = case(\r\n        OnboardingStatus == \"Can be onboarded\" or OnboardingStatus == \"Insufficient info\", \"Not Onboarded\",\r\n        OnboardingStatus // otherwise keep original value\r\n    )\r\n| project TimeGenerated, DeviceName, OSPlatform, OnboardingStatus, SensorHealthState, ExposureLevel, IsExcluded\r\n| extend SensorHealthState = iff(SensorHealthState==\"Active\" and OnboardingStatus == \"Onboarded\",\"🟩 Active\", iff(SensorHealthState==\"Inactive\" and OnboardingStatus == \"Onboarded\",\"🟥 Inactive\",SensorHealthState))\r\n| extend HealthOrder = case(\r\n        SensorHealthState contains \"Inactive\", 1,\r\n        SensorHealthState contains \"Active\", 2,\r\n        3 // fallback for other states\r\n    )\r\n| order by HealthOrder asc, TimeGenerated desc\r\n| project-away HealthOrder",
               "size": 2,
               "title": "Defender for Endpoint (Antivirus) Status ",
               "timeContextFromParameter": "TimeRange",
@@ -741,7 +741,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SigninLogs\r\n| project UserPrincipalName,\r\n          AuthenticationRequirement,          // \"singleFactorAuthentication\" or \"multiFactorAuthentication\"\r\n          AuthenticationDetails,\r\n          ResultType,\r\n          ResultDescription,\r\n          ConditionalAccessStatus,\r\n          TimeGenerated\r\n| summarize SignIns = count(),\r\n            MFASuccess = countif(AuthenticationRequirement == \"multiFactorAuthentication\")\r\n        by UserPrincipalName\r\n| extend MFAStatus = iff(MFASuccess > 0, \"MFA Used\", \"No MFA Used\"), MFAFailure = SignIns - MFASuccess\r\n| sort by MFAStatus asc, SignIns desc",
+              "query": "SigninLogs\r\n| project UserPrincipalName,\r\n          AuthenticationRequirement,          // \"singleFactorAuthentication\" or \"multiFactorAuthentication\"\r\n          AuthenticationDetails,\r\n          ResultType,\r\n          ResultDescription,\r\n          ConditionalAccessStatus,\r\n          TimeGenerated\r\n| summarize SignIns = count(),\r\n            MFASuccess = countif(AuthenticationRequirement == \"multiFactorAuthentication\")\r\n        by UserPrincipalName\r\n| extend MFAStatus = iff(MFASuccess > 0, \"MFA Used\", \"No MFA Used\"), MFAFailure = SignIns - MFASuccess\r\n| sort by MFAStatus desc, SignIns desc",
               "size": 0,
               "title": "DB Users MFA status",
               "timeContextFromParameter": "TimeRange",
@@ -994,7 +994,7 @@
           {
             "type": 1,
             "content": {
-              "json": "### Getting Started with the HIPAA Compliance Solution\r\n\r\nThere are two pre-requisites to getting started with the HIPAA Compliance Solution:<br>\r\n\r\n1. **<u>Connect Data Sources:</u>**  \r\n   Users will need to connect applicable data sources to populate the reports.  \r\n   This solution provides support for the following data sources:\r\n   - ***AzureDiagnostics*** (to collect logs from firewalls, network devices, and other HIPAA-relevant infrastructure)\r\n   - ***SecurityEvent*** (for Windows server event logs — login activity, access attempts, policy changes)\r\n   - ***SecurityAlert*** (for anomaly and incident detection)\r\n   - ***AuditLogs*** (for Azure AD sign-in and access activity — user activity and MFA status)\r\n   - ***DeviceEvents / DeviceProcessEvents*** (for endpoint protection and Defender for Endpoint alerts)\r\n   - ***SQLSecurityAuditEvents*** (for HIPAA database activity auditing)<br>\r\n\r\n2. **<u>Define HIPAA Users and Assets:</u>**<br>\r\n   Users will need to define HIPAA-relevant users and assets within their compliance scope via two Watchlists:<br><br>\r\n\r\n   **<u>HIPAA Users Details Watchlist</u>**  \r\n   - Save the CSV file with the following columns: `UserName, TrainingStatus, AccessLevel`\r\n   - Open your workspace in Microsoft Sentinel\r\n   - Go to **Watchlist** under the **Configuration** tab\r\n   - Click on **Add new**\r\n   - Enter **\"hipaa_users_details\"** in the **Name** field\r\n   - Enter **Description**\r\n   - Enter **\"hipaa_users_details\"** in the **Alias** field\r\n   - Set **SourceType** to **LocalFile**\r\n   - Set **File type** to **CSV**\r\n   - Upload the CSV file\r\n   - Enter **\"asset\"** as the search key\r\n   - Click **Review and Create**, then **Create**<br><br>\r\n\r\n   **<u>HIPAA Assets Watchlist</u>**  \r\n   - Save the CSV file with the following columns: `DeviceName, DeviceType`\r\n   - Repeat the same steps as above but use:\r\n     - **Name:** `hipaa_assets`\r\n     - **Alias:** `hipaa_assets`\r\n     - **SearchKey:** `DeviceName`  \r\n<br>\r\n\r\n### Included in the Microsoft Sentinel HIPAA Compliance Solution\r\n\r\nThis solution enables Microsoft Sentinel users to harness the power of their SIEM to help meet HIPAA Security Rule requirements, including access control, audit controls, integrity monitoring, and incident response.<br>\r\n\r\nThe Watchlist included in this solution allows users to define the HIPAA Assets included in their organization’s compliance scope.  \r\nThe Workbook included in this solution contains three tabs, with the following information.  \r\nThe solution comes with pre-defined dashboards, visualizations, and reports, providing immediate insights into your HIPAA environment.<br>\r\n\r\n**<u>Overview Tab</u>**  \r\nThis Workbook tab provides an overview of recent activity on the HIPAA Assets you define and trends over time, through the following tables and charts:  \r\n\r\n1. **HIPAA Users Details:** Maintain a record of users, their training status, and their access levels.  \r\n2. **HIPAA Asset Status:** Online and offline status of network/DB assets in HIPAA scope, including how long an asset has been offline.  \r\n3. **New/Active Incidents (Last 24 Hours):** Count and trend of incidents related to HIPAA assets.  \r\n4. **Defender for Endpoint Status:** Antivirus status and alerts for HIPAA assets.  \r\n5. **Dangerous CRUD Operations:** Highlight of critical database actions such as DELETE, DROP, or ALTER performed by HIPAA DB users.  \r\n6. **Database Operations (1-Day Interval):** Visualization of all DB operations over the last 24 hours.  \r\n7. **Compromised HIPAA Assets:** Summary of devices flagged as compromised or under attack.  \r\n8. **DB Users MFA Status:** Status of multi-factor authentication for all HIPAA DB users.  \r\n9. **Incidents on HIPAA Servers (Last 24 Hours):** Detailed incident listing and correlation to MITRE ATT&CK techniques.  \r\n10. **Network Port Utilization:** Visualization of open/active network ports and their usage trends.<br>\r\n\r\n**<u>Audit Trail Reporting Tab</u>**  \r\nThis Workbook tab provides a more in-depth look at the data summarized in the Overview, through the following tables and charts:  \r\n\r\n1. **Security Events, Network Traffic Logs, Process Running on HIPAA Assets:** Provides an audit trail of activities occurring on HIPAA assets.  \r\n2. **Login Activities:** Provides an audit trail of invalid logical access attempts on HIPAA assets.  \r\n3. **Security Events:** Provides an audit trail of all actions taken by an individual with root or administrative privileges. This includes use of or changes to identification and authentication mechanisms, creation of new accounts, elevation of privileges, and all changes, additions, deletions to accounts with root or administrative privileges.  \r\n4. **All Activities by User on Cardholder DB:** Provides audit trail of all events occurring on HIPAA servers that store cardholder data.<br>\r\n\r\n**<u>Further Analysis Tab</u>**  \r\nThis Workbook tab provides users with the ability to dive deeper into these results, with pre-written queries provided for export and further exploration.  \r\n",
+              "json": "### Getting Started with the HIPAA Compliance Solution\r\n\r\nThere are two pre-requisites to getting started with the HIPAA Compliance Solution:<br>\r\n\r\n1. **<u>Connect Data Sources:</u>**  \r\n   Users will need to connect applicable data sources to populate the reports.  \r\n   This solution provides support for the following data sources:\r\n   - ***AzureDiagnostics*** (to collect logs from firewalls, network devices, and other HIPAA-relevant infrastructure)\r\n   - ***SecurityEvent*** (for Windows server event logs — login activity, access attempts, policy changes)\r\n   - ***SecurityAlert*** (for anomaly and incident detection)\r\n   - ***AuditLogs*** (for Azure AD sign-in and access activity — user activity and MFA status)\r\n   - ***DeviceEvents / DeviceProcessEvents*** (for endpoint protection and Defender for Endpoint alerts)\r\n   - ***SQLSecurityAuditEvents*** (for HIPAA database activity auditing)<br>\r\n\r\n2. **<u>Define HIPAA Users and Assets:</u>**<br>\r\n   Users will need to define HIPAA-relevant users and assets within their compliance scope via two Watchlists:<br><br>\r\n\r\n   **<u>HIPAA Users Details Watchlist</u>**  \r\n   - Save the CSV file with the following columns: `UserName, TrainingStatus, AccessLevel`\r\n   - Open your workspace in Microsoft Sentinel\r\n   - Go to **Watchlist** under the **Configuration** tab\r\n   - Click on **Add new**\r\n   - Enter **\"hipaa_users_details\"** in the **Name** field\r\n   - Enter **Description**\r\n   - Enter **\"hipaa_users_details\"** in the **Alias** field\r\n   - Set **SourceType** to **LocalFile**\r\n   - Set **File type** to **CSV**\r\n   - Upload the CSV file\r\n   - Enter **\"asset\"** as the search key\r\n   - Click **Review and Create**, then **Create**<br><br>\r\n\r\n   **<u>HIPAA Assets Watchlist</u>**  \r\n   - Save the CSV file with the following columns: `DeviceName, DeviceType`\r\n   - Repeat the same steps as above but use:\r\n     - **Name:** `hipaa_assets`\r\n     - **Alias:** `hipaa_assets`\r\n     - **SearchKey:** `DeviceName`  \r\n<br>\r\n\r\n### Included in the Microsoft Sentinel HIPAA Compliance Solution\r\n\r\nThis solution enables Microsoft Sentinel users to harness the power of their SIEM to help meet HIPAA Security Rule requirements, including access control, audit controls, integrity monitoring, and incident response.<br>\r\n\r\nThe Watchlist included in this solution allows users to define the HIPAA Assets included in their organization’s compliance scope.  \r\nThe Workbook included in this solution contains three tabs, with the following information.  \r\nThe solution comes with pre-defined dashboards, visualizations, and reports, providing immediate insights into your HIPAA environment.<br>\r\n\r\n**<u>Overview Tab</u>**  \r\nThis Workbook tab provides an overview of recent activity on the HIPAA Assets you define and trends over time, through the following tables and charts:  \r\n\r\n1. **HIPAA DB Users Status:** Maintain a record of users, their training status, and their access levels.  \r\n2. **HIPAA Asset Status:** Online and offline status of network/DB assets in HIPAA scope, including how long an asset has been offline.  \r\n3. **New/Active Incidents:** Count and trend of incidents related to HIPAA assets.\r\n4. **Failure vs Success logins:** Bird Eye View on how many users have failed and successfull logins in given time range   \r\n5. **Defender for Endpoint (Antivirus) Status:** Uncovered Hipaa Assets which doesn't has anitvirus installed or antivirus in disabled state  \r\n6. **Dangerous Crud operations performed by DB users:** Highlight of critical database actions such as DELETE, DROP, ALTER or reading data on large scale performed by HIPAA DB users.  \r\n7. **Operations performed on DB server over 1 day interval:** Visualization of all DB operations over the given time range with an interval of one day.  \r\n8. **Compromised HIPAA Assets:** Summary of devices flagged as compromised or under attack.  \r\n9. **DB Users MFA Status:** Status of multi-factor authentication for all HIPAA DB users.  \r\n10. **Incidents on HIPAA Servers:** Detailed incident listing and correlation to MITRE ATT&CK techniques.  \r\n11. **Network Port Utilization:** Stats of open/active network ports and their usage trends.\r\n12. **Network ports utilization over 3 days interval:** Visualization of open/active network ports and their usage trends.<br>\r\n\r\n**<u>Attack Range Tab</u>**  \r\nThis tab focuses on detection and triage of active intrusion behaviors tied to ransomware and account compromise. It highlights suspicious stored-procedure execution, matches known ransomware hashes/IOCs from threat intelligence, surfaces unusual SMB and lateral-movement patterns indicative of worming or ransomware spread, and identifies credential-based attacks such as password spray and credential stuffing :  \r\n\r\n1. **Detect Ransomware Activity (Macaw ransomware):** Highlights behaviors and patterns consistent with Macaw ransomware execution and spread.\r\n2. **SQL queries with suspicious stored procedures:** Surfaces anomalous or risky stored procedure executions that may indicate malicious activity.\r\n3. **Detect Known Ransomware Hashes or IOCs:** Flags files and activities matching ransomware indicators from threat intelligence feeds. \r\n4. **Unusual SMB/Network Activity (possible worm/ransomware spread):** Detects abnormal SMB or lateral-movement traffic often linked to worm/ransomware propagation.\r\n4. **Password Spray / Credential Stuffing(Multiple failed login attempts on a single account in a short window):** Identifies multiple failed login attempts on a single account in a short timeframe.<br>\r\n\r\n**<u>Audit Trail Reporting Tab</u>**  \r\nProvides detailed visibility into HIPAA asset activities, including network traffic, running processes, and security events. This tab enables auditors and security teams to track user and system activity for compliance, investigation, and forensic analysis.:\r\n\r\n1. **Network Traffic logs of HIPAA assets:** Displays captured network traffic messages from HIPAA assets to help identify unusual communication patterns or anomalies.\r\n2. **Process running on HIPAA assets:** Lists all processes executing on HIPAA assets to detect unauthorized or suspicious applications.\r\n3. **Security events of HIPAA assets** Shows security-related events (logins, account activity, parent process relationships) to support compliance audits and threat investigations. <br>\r\n\r\n**<u>Further Analysis Tab</u>**  \r\nThis Workbook tab provides users with the ability to dive deeper into these results, with pre-written queries provided for export and further exploration.  \r\n",
               "style": "upsell"
             },
             "name": "text - 1"
@@ -1010,7 +1010,7 @@
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+    "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
