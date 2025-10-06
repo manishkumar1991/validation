@@ -20,7 +20,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "/subscriptions/7619e183-fb89-4e4b-a3b3-924fba956be7"
+            "value": null
           },
           {
             "id": "5fd8e8dd-6eef-480f-b0e4-aae142bb3f51",
@@ -34,7 +34,7 @@
             "timeContext": {
               "durationMs": 86400000
             },
-            "value": "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
+            "value": null
           },
           {
             "id": "70ca879b-56d8-4325-995c-9923f0d46cde",
@@ -133,6 +133,14 @@
             "linkTarget": "parameter",
             "linkLabel": "Audit Trail Reporting",
             "subTarget": "audittrailreporting",
+            "style": "link"
+          },
+          {
+            "id": "6a16a966-40ef-4deb-a350-d924f8e6e1cb",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Further Analysis",
+            "subTarget": "furtheranalysis",
             "style": "link"
           }
         ]
@@ -1007,10 +1015,49 @@
         "value": "gettingstarted"
       },
       "name": "GettingStartedGroup"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 1,
+            "content": {
+              "json": "## For complete analaysis, We are providing the analytic KQL queries through which more in depth detailed can be extracted .",
+              "style": "info"
+            },
+            "name": "text - 0"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "### Steps on how to run the query :\r\n\r\n1> Search and Select microsoft sentinel on azure portal </br>\r\n2> choose the correct workspace </br>\r\n3> choose logs and then paste the query </br>\r\n4> Run it for suitable time range </br>",
+              "style": "info"
+            },
+            "name": "text - 1"
+          },
+          {
+            "type": 1,
+            "content": {
+              "json": "## Query for Defender for Endpoint (Antivirus) Status </br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset); </br>\r\nSecurityEvent </br>\r\n|where Computer in~ (watchlist) </br>\r\n|where Activity has_any (\"An account failed to log on\",\"An account was successfully logged on\")</br> \r\n|where SubjectUserName !has (\"$\")</br>\r\n</br>\r\n</br>\r\n## Query for fetching the traffic logs </br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset); </br>\r\nAzureDiagnostics </br>\r\n|where Resource in~ (watchlist) </br>\r\n|summarize count() by msg_s, Resource</br>\r\n|project-away count_ </br>\r\n</br>\r\n</br>\r\n## Query for getting the details of process running on PCI servers</br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);</br>\r\nSecurityEvent </br>\r\n|where Computer in (watchlist)</br>\r\n|where Process != \"\"</br>\r\n|summarize count() by Process,Computer</br>\r\n</br>\r\n</br>\r\n## Query for checking the activities on PCI servers </br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);</br>\r\nSecurityEvent </br>\r\n|where Computer in~ (watchlist)</br>\r\n|summarize count() by Activity,Computer</br>\r\n</br>\r\n</br>\r\n## Query for checking the status of PCI assets</br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);</br>\r\nHeartbeat</br>\r\n|where Computer in~ (watchlist)</br>\r\n|extend Lastlog = TimeGenerated</br>\r\n|summarize arg_max(Lastlog, *) by Computer</br>\r\n|extend Current = now()</br>\r\n|extend Diffrence = datetime_diff('minute',now(),Lastlog)</br>\r\n|project Computer,Lastlog,Current,Diffrence</br>\r\n</br>\r\n</br>\r\n## Query for fetching the activities performed by user</br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);</br>\r\nSecurityEvent </br>\r\n|where Computer in~ (watchlist)</br>\r\n|where SubjectUserName !has (\"$\")</br>\r\n|where SubjectUserName != \"\"</br>\r\n|project SubjectUserName , Activity, Process , ProcessName</br>\r\n|distinct *</br>\r\n<br>\r\n<br>\r\n## All actions taken by any individual with root or administrative privileges<br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);<br>\r\nSecurityEvent <br>\r\n|where Computer has_any (watchlist)<br>\r\n|where Activity has \"privileged\"<br>\r\n|distinct *<br>\r\n|sort by TimeGenerated<br>\r\n<br>\r\n<br>\r\n## All activities by user on card holder DB<br>\r\nlet watchlist = (_GetWatchlist('pciassets') | project asset);<br>\r\nOracleDatabaseAuditEvent<br>\r\n|where SrcDvcHostname has_any (watchlist)<br>",
+              "style": "upsell"
+            },
+            "name": "text - 2"
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "seltab",
+        "comparison": "isEqualTo",
+        "value": "furtheranalysis"
+      },
+      "name": "furtheranalysisgroup"
     }
   ],
   "fallbackResourceIds": [
-    "/subscriptions/ab48f397-fc82-4634-aa52-62dd91b3ebaa/resourcegroups/woodgrove-rg/providers/microsoft.operationalinsights/workspaces/woodgrove-loganalyiticsworkspace"
+    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
   ],
   "fromTemplateId": "sentinel-UserWorkbook",
   "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
