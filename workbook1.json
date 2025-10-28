@@ -1,0 +1,496 @@
+{
+  "version": "Notebook/1.0",
+  "items": [
+    {
+      "type": 9,
+      "content": {
+        "version": "KqlParameterItem/1.0",
+        "parameters": [
+          {
+            "id": "cdf04ff6-caee-458d-a25e-4b37f195ba04",
+            "version": "KqlParameterItem/1.0",
+            "name": "Subscription",
+            "type": 6,
+            "typeSettings": {
+              "additionalResourceOptions": [],
+              "includeAll": false
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": null
+          },
+          {
+            "id": "1317d6e1-f8fa-4ff1-ab04-e456fb11da6f",
+            "version": "KqlParameterItem/1.0",
+            "name": "Workspace",
+            "label": "Workspace Name",
+            "type": 5,
+            "typeSettings": {
+              "additionalResourceOptions": []
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": null
+          },
+          {
+            "id": "453502c4-b5dd-47cb-b0a7-48128c7340cd",
+            "version": "KqlParameterItem/1.0",
+            "name": "Time",
+            "label": "Time Range",
+            "type": 4,
+            "typeSettings": {
+              "selectableValues": [
+                {
+                  "durationMs": 300000
+                },
+                {
+                  "durationMs": 900000
+                },
+                {
+                  "durationMs": 1800000
+                },
+                {
+                  "durationMs": 3600000
+                },
+                {
+                  "durationMs": 14400000
+                },
+                {
+                  "durationMs": 43200000
+                },
+                {
+                  "durationMs": 86400000
+                },
+                {
+                  "durationMs": 172800000
+                },
+                {
+                  "durationMs": 259200000
+                },
+                {
+                  "durationMs": 604800000
+                },
+                {
+                  "durationMs": 1209600000
+                },
+                {
+                  "durationMs": 2419200000
+                },
+                {
+                  "durationMs": 2592000000
+                },
+                {
+                  "durationMs": 5184000000
+                },
+                {
+                  "durationMs": 7776000000
+                }
+              ]
+            },
+            "timeContext": {
+              "durationMs": 86400000
+            },
+            "value": {
+              "durationMs": 1209600000
+            }
+          }
+        ],
+        "style": "pills",
+        "queryType": 0,
+        "resourceType": "microsoft.operationalinsights/workspaces"
+      },
+      "name": "parameters - 0"
+    },
+    {
+      "type": 11,
+      "content": {
+        "version": "LinkItem/1.0",
+        "style": "tabs",
+        "links": [
+          {
+            "id": "d24faee3-b6c4-413d-a517-7b0eeeebc4ca",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Getting Started",
+            "subTarget": "gettingstarted",
+            "style": "link"
+          },
+          {
+            "id": "3c8b1896-b71e-41e2-a56b-9fb798993288",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Incident Management & Reporting",
+            "subTarget": "incidentmanagmentreporting",
+            "style": "link"
+          },
+          {
+            "id": "ff48fd19-d478-43fd-91df-ec1e623e9844",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Threat Intelligence & Detection",
+            "subTarget": "threatintelligencedetection",
+            "style": "link"
+          },
+          {
+            "id": "9d3b9486-87f0-48db-9098-b7f1b7108098",
+            "cellValue": "seltab",
+            "linkTarget": "parameter",
+            "linkLabel": "Business Continuity & Recovery",
+            "subTarget": "businesscontinuityrecovery",
+            "style": "link"
+          }
+        ]
+      },
+      "name": "links - 7"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "Heartbeat\r\n| summarize LastHeartbeat = max(TimeGenerated) by Computer\r\n| extend TimeSinceLast = datetime_diff('minute', now(), LastHeartbeat)\r\n| where TimeSinceLast > 10\r\n| project Computer, LastHeartbeat, TimeSinceLast",
+              "size": 0,
+              "title": "Inactive servers/devices",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ]
+            },
+            "customWidth": "50",
+            "name": "query - 4",
+            "styleSettings": {
+              "showBorder": true
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "seltab",
+        "comparison": "isEqualTo",
+        "value": "businesscontinuityrecovery"
+      },
+      "name": "businesscontinuityrecovery"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "ThreatIntelIndicators\r\n|where ObservableKey contains \"network-traffic\"\r\n| join kind=innerunique (\r\n    DeviceNetworkEvents\r\n    | extend NetworkIP = RemoteIP\r\n) on $left.ObservableValue == $right.NetworkIP\r\n| project TimeGenerated, Id, Pattern ,NetworkIP, DeviceName, ActionType",
+              "size": 0,
+              "title": "Active Threat Indicators (IOC Hits) (which endpoints communicated with IOC IPs)",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ]
+            },
+            "customWidth": "50",
+            "name": "query - 4",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityAlert\r\n| summarize AlertCount = count() by Tactics",
+              "size": 0,
+              "title": "Alerts by MITRE ATT&CK Techniques",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "AlertCount",
+                    "formatter": 8,
+                    "formatOptions": {
+                      "palette": "blue"
+                    }
+                  }
+                ]
+              }
+            },
+            "customWidth": "30",
+            "name": "query - 5",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityAlert\r\n| where AlertName has_any (\"Blocked\", \"Prevented\")\r\n| summarize PreventedCount = count() by ProductName",
+              "size": 0,
+              "title": "Failed Attack Attempts (Prevented by Control)",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ]
+            },
+            "customWidth": "20",
+            "name": "query - 7",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "ThreatIntelIndicators\r\n|where ObservableKey contains \"file:hashes.'SHA-256\"\r\n| join kind=inner (DeviceFileEvents) on $left.ObservableValue == $right.SHA256\r\n| project TimeGenerated, DeviceName, InitiatingProcessFileName, FileName, ObservableValue, Pattern",
+              "size": 0,
+              "title": "Malicious File or URL Detection",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "name": "query - 6",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "ThreatIntelIndicators\r\n| where Confidence > 80\r\n| summarize HighConfidenceCount = count() by Pattern,Confidence\r\n| order by Confidence desc",
+              "size": 0,
+              "title": "Focus on indicators with high confidence and activity",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ]
+            },
+            "customWidth": "50",
+            "name": "query - 8",
+            "styleSettings": {
+              "showBorder": true
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "seltab",
+        "comparison": "isEqualTo",
+        "value": "threatintelligencedetection"
+      },
+      "name": "threatintelligencedetectiongroup"
+    },
+    {
+      "type": 12,
+      "content": {
+        "version": "NotebookGroup/1.0",
+        "groupType": "editable",
+        "items": [
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Status == \"Closed\"\r\n| extend Duration = datetime_diff('hour', ClosedTime, CreatedTime)\r\n| summarize Avg_MTTR_Hours = avg(Duration)",
+              "size": 4,
+              "title": "Mean Time to Resolve (MTTR)",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "stat",
+              "tileSettings": {
+                "titleContent": {
+                  "columnMatch": "Avg_MTTR_Hours"
+                },
+                "showBorder": false,
+                "sortCriteriaField": "Avg_MTTR_Hours"
+              },
+              "statSettings": {
+                "valueAggregation": "None",
+                "colorSettings": {
+                  "type": "heatmap",
+                  "mode": "foreground",
+                  "heatmapPalette": "coldHot",
+                  "thresholdsGrid": []
+                },
+                "iconSettings": {
+                  "thresholdsGrid": []
+                },
+                "tagText": "",
+                "valueFontStyle": "superLarge"
+              }
+            },
+            "customWidth": "10",
+            "name": "query - 2",
+            "styleSettings": {
+              "margin": "5px",
+              "padding": "5px",
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| summarize Count = count() by Severity\r\n| order by Count desc",
+              "size": 1,
+              "title": "Incidents by Severity",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "visualization": "piechart"
+            },
+            "customWidth": "25",
+            "name": "query - 3",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Status != \"Closed\"\r\n| summarize OpenCount = count() by tostring(Owner)\r\n| order by OpenCount desc",
+              "size": 1,
+              "title": "Open Incidents by Owner",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces"
+            },
+            "customWidth": "25",
+            "name": "query - 4",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| project IncidentNumber ,  Title , Tactics_Category = AdditionalData.tactics\r\n|mv-expand Tactics_Category\r\n|summarize No_Of_Incidents = count() by tostring(Tactics_Category)\r\n|sort by No_Of_Incidents",
+              "size": 1,
+              "title": "Top Incident Categories",
+              "timeContext": {
+                "durationMs": 86400000
+              },
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "visualization": "piechart"
+            },
+            "customWidth": "40",
+            "name": "query - 5",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Status == \"Closed\"\r\n| extend Duration = datetime_diff('hour', ClosedTime, CreatedTime)\r\n| summarize arg_max(TimeGenerated, *) by IncidentNumber , Title , CreatedTime , ClosedTime , Duration\r\n|project IncidentNumber , Title , CreatedTime , ClosedTime , Duration\r\n| sort by Duration",
+              "size": 0,
+              "title": "Time taken to resolve the incidents",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "sortBy": [
+                  {
+                    "itemKey": "Title",
+                    "sortOrder": 1
+                  }
+                ]
+              },
+              "sortBy": [
+                {
+                  "itemKey": "Title",
+                  "sortOrder": 1
+                }
+              ]
+            },
+            "customWidth": "50",
+            "name": "query - 1",
+            "styleSettings": {
+              "showBorder": true
+            }
+          },
+          {
+            "type": 3,
+            "content": {
+              "version": "KqlItem/1.0",
+              "query": "SecurityIncident\r\n| where Status != \"Closed\"\r\n| summarize arg_max(TimeGenerated, *) by IncidentNumber\r\n| extend Age_Hours = datetime_diff('hour', now(), CreatedTime)\r\n| where Age_Hours > 72\r\n| order by Age_Hours desc\r\n|project IncidentNumber, Title, Status , ProviderName, IncidentUrl , CreatedTime",
+              "size": 0,
+              "title": "SLA Breach – Incidents Unresolved Beyond 72 Hours",
+              "timeContextFromParameter": "Time",
+              "queryType": 0,
+              "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
+              "gridSettings": {
+                "formatters": [
+                  {
+                    "columnMatch": "IncidentUrl",
+                    "formatter": 7,
+                    "formatOptions": {
+                      "linkTarget": "Url"
+                    }
+                  }
+                ]
+              }
+            },
+            "customWidth": "50",
+            "name": "query - 6",
+            "styleSettings": {
+              "showBorder": true
+            }
+          }
+        ]
+      },
+      "conditionalVisibility": {
+        "parameterName": "seltab",
+        "comparison": "isEqualTo",
+        "value": "incidentmanagmentreporting"
+      },
+      "name": "incidentmanagmentreportinggroup"
+    }
+  ],
+  "fallbackResourceIds": [
+    "/subscriptions/a2c2c31d-ebd4-4880-a60c-d615efa9d201/resourcegroups/sentinel-cat/providers/microsoft.operationalinsights/workspaces/sentinel-lab"
+  ],
+  "fromTemplateId": "sentinel-UserWorkbook",
+  "$schema": "https://github.com/Microsoft/Application-Insights-Workbooks/blob/master/schema/workbook.json"
+}
