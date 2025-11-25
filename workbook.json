@@ -481,7 +481,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "let TempData=datatable(\r\n    UserName: string,\r\n    TrainingStatus: string,\r\n    AccessLevel: string\r\n) [\r\n    \"Manish Kumar\", \"Completed\", \"Admin\",\r\n    \"Kannu\", \"Not Completed\", \"User\",\r\n    \"Shinda\", \"Completed\", \"Security Admin\",\r\n    \"Arora\", \"Not Completed\", \"Guest\"\r\n];\r\nTempData\r\n| extend TrainingStatus = case(\r\n    TrainingStatus == \"Completed\", strcat(\"🟩 \", TrainingStatus),\r\n    strcat(\"🟥 \", TrainingStatus)\r\n)",
+              "query": "let TempData=datatable(\r\n    UserName: string,\r\n    TrainingStatus: string,\r\n    AccessLevel: string\r\n) [\r\n    \"Manish Kumar\", \"Completed\", \"Admin\",\r\n    \"Mathew\", \"Not Completed\", \"User\",\r\n    \"Dinesh\", \"Completed\", \"Security Admin\",\r\n    \"Jagdeep\", \"Not Completed\", \"Guest\"\r\n];\r\nTempData\r\n| extend TrainingStatus = case(\r\n    TrainingStatus == \"Completed\", strcat(\"🟩 \", TrainingStatus),\r\n    strcat(\"🟥 \", TrainingStatus)\r\n)",
               "size": 1,
               "title": "Hipaa DB Users status",
               "timeContextFromParameter": "TimeRange",
