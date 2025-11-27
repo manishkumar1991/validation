@@ -368,6 +368,9 @@
               "timeContextFromParameter": "Time",
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
+              "crossComponentResources": [
+                "{Workspace}"
+              ],
               "gridSettings": {
                 "formatters": [
                   {
@@ -390,7 +393,7 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "SecurityAlert\r\n| where AlertName has_any (\"Blocked\", \"Prevented\")\r\n| summarize PreventedCount = count() by ProductName",
+              "query": "let watchlist=datatable(DeviceName: string, DeviceType: string) [\r\n    \"jrhi-dc06.corp.jrhisurf.com\", \"Computer\",\r\n    \"varuntestsqldb\", \"Computer\",\r\n    \"Hostname1\", \"Computer\",\r\n    \"parkcity-win10v.parkcity.alpineskihouse.co\", \"Computer\",\r\n    \"dip-cve-vm1\",\"Computer\",\r\n    \"woodgrove-srv1-linux\",\"Computer\",\r\n    \"woodgrove-fw04\",\"Firewall\",\r\n    \"tmvmeastus2f743dfd\",\"Computer\",\r\n    \"suf_go\",\"Computer\",\r\n    \"DESKTOP-1FINQP9\",\"Computer\",\r\n    \"PARKCITY-Win10D\",\"Computer\",\r\n    \"woodgrove-sql\",\"Computer\"\r\n]|project DeviceName;\r\nSecurityAlert\r\n|extend data = todynamic(Entities)\r\n|mv-expand data\r\n|where tostring(data.Type) == \"host\"\r\n|extend hostname = tostring(data.HostName)\r\n|where hostname != \"\" and hostname in~ (watchlist)\r\n|summarize arg_max(TimeGenerated,*) by SystemAlertId\r\n| where AlertName has_any (\"Blocked\", \"Prevented\")\r\n| summarize PreventedCount = count() by ProductName",
               "size": 0,
               "title": "Failed Attack Attempts (Prevented by Control)",
               "timeContextFromParameter": "Time",
@@ -410,27 +413,9 @@
             "type": 3,
             "content": {
               "version": "KqlItem/1.0",
-              "query": "ThreatIntelIndicators\r\n|where ObservableKey contains \"file:hashes.'SHA-256\"\r\n| join kind=inner (DeviceFileEvents) on $left.ObservableValue == $right.SHA256\r\n| project TimeGenerated, DeviceName, InitiatingProcessFileName, FileName, ObservableValue, Pattern",
+              "query": "let watchlist=datatable(DeviceName: string, DeviceType: string) [\r\n    \"jrhi-dc06.corp.jrhisurf.com\", \"Computer\",\r\n    \"varuntestsqldb\", \"Computer\",\r\n    \"Hostname1\", \"Computer\",\r\n    \"parkcity-win10v.parkcity.alpineskihouse.co\", \"Computer\",\r\n    \"dip-cve-vm1\",\"Computer\",\r\n    \"woodgrove-srv1-linux\",\"Computer\",\r\n    \"woodgrove-fw04\",\"Firewall\",\r\n    \"tmvmeastus2f743dfd\",\"Computer\",\r\n    \"suf_go\",\"Computer\",\r\n    \"DESKTOP-1FINQP9\",\"Computer\",\r\n    \"PARKCITY-Win10D\",\"Computer\",\r\n    \"woodgrove-sql\",\"Computer\"\r\n]|project DeviceName;\r\nThreatIntelIndicators\r\n|where ObservableKey contains \"file:hashes.'SHA-256\"\r\n| join kind=inner (DeviceFileEvents|where DeviceName != \"\" and DeviceName in~ (watchlist)) on $left.ObservableValue == $right.SHA256\r\n| project TimeGenerated, DeviceName, InitiatingProcessFileName, FileName, ObservableValue, Pattern",
               "size": 0,
               "title": "Malicious File or URL Detection",
-              "timeContext": {
-                "durationMs": 86400000
-              },
-              "queryType": 0,
-              "resourceType": "microsoft.operationalinsights/workspaces"
-            },
-            "name": "query - 6",
-            "styleSettings": {
-              "showBorder": true
-            }
-          },
-          {
-            "type": 3,
-            "content": {
-              "version": "KqlItem/1.0",
-              "query": "ThreatIntelIndicators\r\n| where Confidence > 80\r\n| summarize HighConfidenceCount = count() by Pattern,Confidence\r\n| order by Confidence desc",
-              "size": 0,
-              "title": "Focus on indicators with high confidence and activity",
               "timeContextFromParameter": "Time",
               "queryType": 0,
               "resourceType": "microsoft.operationalinsights/workspaces",
@@ -438,8 +423,7 @@
                 "{Workspace}"
               ]
             },
-            "customWidth": "50",
-            "name": "query - 8",
+            "name": "query - 6",
             "styleSettings": {
               "showBorder": true
             }
